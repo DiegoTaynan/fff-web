@@ -4,6 +4,8 @@ import "react-confirm-alert/src/react-confirm-alert.css";
 import api from "../../constants/api.js"; // Certifique-se de que o caminho está correto
 
 function Appointment(props) {
+  console.log("Appointment Props:", props); // Log para verificar os dados recebidos pelo componente
+
   const dt = new Date(props.booking_date + "T" + props.booking_hour);
 
   // Formatação manual da data
@@ -35,13 +37,16 @@ function Appointment(props) {
                 alert("Error updating status");
               }
             } catch (error) {
-              alert("Error updating status");
+              console.error("Error updating status:", error); // Adicionado log para depuração
+              alert("Error updating status. Please try again later.");
             }
           },
         },
         {
           label: "No",
-          onClick: () => {},
+          onClick: () => {
+            // Garantir que o callback "No" não cause problemas
+          },
         },
       ],
     });

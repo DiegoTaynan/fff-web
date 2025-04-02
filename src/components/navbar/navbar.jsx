@@ -1,18 +1,22 @@
 import "./navbar.css";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo-white.png";
+import api from "../../constants/api.js";
 
 function Navbar({ itemsPerPage, setItemsPerPage, page, setPage, totalPages }) {
   const navigate = useNavigate();
 
   function Logout() {
-    localStorage.removeItem("sessionToken");
-    localStorage.removeItem("sessionId");
-    localStorage.removeItem("sessionEmail");
-    localStorage.removeItem("sessionName");
-
-    navigate("/");
-    api.defaults.headers.common["Authorization"] = "";
+    try {
+      // Opcional: Faça uma requisição para invalidar o token no backend
+      api.post("/logout"); // Ajuste o endpoint conforme necessário
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } finally {
+      // Limpa o token do localStorage e redireciona para a página de login
+      localStorage.removeItem("token");
+      window.location.href = "/"; // Redireciona para a página inicial ou de login
+    }
   }
 
   return (
