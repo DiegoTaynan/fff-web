@@ -44,9 +44,10 @@ function Appointments() {
       const response = await api.delete("/appointments/" + id);
 
       if (response.data) {
-        LoadAppointments();
+        await LoadAppointments();
       }
     } catch (error) {
+      console.error("Error deleting appointment:", error);
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -58,10 +59,13 @@ function Appointments() {
     try {
       const response = await api.get("/mechanic");
 
+      console.log("Mechanics Response:", response.data);
+
       if (response.data) {
-        setMechanic(response.data);
+        setMechanic(response.data || []);
       }
     } catch (error) {
+      console.error("Error loading mechanics:", error);
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -81,18 +85,23 @@ function Appointments() {
         },
       });
 
-      console.log("Appointments response:", response.data);
+      console.log("API Response:", response.data);
 
+      // Ajuste para acessar os dados corretamente
       if (response.data) {
-        setAppointments(response.data.appointments);
-        setTotalPages(Math.ceil(response.data.total / itemsPerPage));
+        const appointmentsData = response.data || []; // Dados diretamente em response.data
+        console.log("Appointments Data:", appointmentsData);
+        setAppointments(appointmentsData); // Atualiza o estado com os dados corretos
+        setTotalPages(
+          Math.ceil((appointmentsData.length || 0) / itemsPerPage) // Ajuste para calcular páginas
+        );
       }
     } catch (error) {
       console.error("Error loading appointments:", error);
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
-      } else alert("Error logging in. Please try again later.");
+      } else alert("Error loading appointments. Please try again later.");
     }
   }
 
@@ -146,14 +155,11 @@ function Appointments() {
               onChange={ChangeMechanic}
             >
               <option value="">All mechanics</option>
-
-              {mechanic.map((mec) => {
-                return (
-                  <option key={mec.id_mechanic} value={mec.id_mechanic}>
-                    {mec.name}
-                  </option>
-                );
-              })}
+              {mechanic.map((mec) => (
+                <option key={mec.id_mechanic} value={mec.id_mechanic}>
+                  {mec.name}
+                </option>
+              ))}
             </select>
           </div>
           <button
@@ -174,13 +180,13 @@ function Appointments() {
               <th scope="col">Mechanic</th>
               <th scope="col">Service</th>
               <th scope="col">Date/Hour</th>
-              <th scope="col">Progress</th> {/* Adiciona a nova coluna */}
+              <th scope="col">Progress</th>
               <th scope="col" className="col-buttons"></th>
             </tr>
           </thead>
           <tbody>
-            {appointments.map((ap) => {
-              return (
+            {appointments.length > 0 ? (
+              appointments.map((ap) => (
                 <Appointment
                   key={ap.id_appointment}
                   id_appointment={ap.id_appointment}
@@ -189,12 +195,18 @@ function Appointments() {
                   service={ap.service}
                   booking_date={ap.booking_date}
                   booking_hour={ap.booking_hour}
-                  progress={ap.progress} // Passa o status de progresso
+                  progress={ap.progress}
                   clickEdit={ClickEdit}
                   clickDelete={ClickDelete}
                 />
-              );
-            })}
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="text-center">
+                  No appointments found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
