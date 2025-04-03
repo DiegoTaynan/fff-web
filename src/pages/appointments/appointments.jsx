@@ -3,7 +3,7 @@ import Navbar from "../../components/navbar/navbar.jsx";
 import { Link, useNavigate } from "react-router-dom";
 import Appointment from "../../components/appointment/appointment.jsx";
 import { useEffect, useState } from "react";
-import api from "../../constants/api.js";
+import api from "../../services/api";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css"; // Import css
 
@@ -59,8 +59,6 @@ function Appointments() {
     try {
       const response = await api.get("/mechanic");
 
-      console.log("Mechanics Response:", response.data);
-
       if (response.data) {
         setMechanic(response.data || []);
       }
@@ -85,16 +83,15 @@ function Appointments() {
         },
       });
 
-      console.log("API Response:", response.data);
-
-      // Ajuste para acessar os dados corretamente
       if (response.data) {
-        const appointmentsData = response.data || []; // Dados diretamente em response.data
-        console.log("Appointments Data:", appointmentsData);
-        setAppointments(appointmentsData); // Atualiza o estado com os dados corretos
-        setTotalPages(
-          Math.ceil((appointmentsData.length || 0) / itemsPerPage) // Ajuste para calcular páginas
-        );
+        const appointmentsData = response.data.data || response.data;
+        const totalItems = response.data.totalItems || appointmentsData.length;
+
+        setAppointments(appointmentsData || []);
+        setTotalPages(Math.ceil(totalItems / itemsPerPage));
+      } else {
+        setAppointments([]);
+        setTotalPages(1);
       }
     } catch (error) {
       console.error("Error loading appointments:", error);

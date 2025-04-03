@@ -1,22 +1,50 @@
 import "./navbar.css";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo-white.png";
-import api from "../../constants/api.js";
+import React, { useState, useEffect } from "react";
+import api from "../../services/api"; // Certifique-se de que o caminho está correto
 
-function Navbar({ itemsPerPage, setItemsPerPage, page, setPage, totalPages }) {
+function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
   const navigate = useNavigate();
+  const [totalItems, setTotalItems] = useState(0);
+
+  useEffect(() => {
+    async function fetchTotalItems() {
+      try {
+        const response = await api.get("/appointments", {
+          params: { page: 1, limit: 1 },
+        });
+
+        if (response && response.data && response.data.total) {
+          setTotalItems(response.data.total);
+        } else {
+          setTotalItems(0); // Garante que não seja `undefined`
+        }
+      } catch (error) {
+        setTotalItems(0); // Evita erro caso a API falhe
+      }
+    }
+
+    fetchTotalItems();
+  }, []);
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  useEffect(() => {
+    const token = localStorage.getItem("sessionToken");
+    if (token) {
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+  }, []);
 
   function Logout() {
-    try {
-      // Opcional: Faça uma requisição para invalidar o token no backend
-      api.post("/logout"); // Ajuste o endpoint conforme necessário
-    } catch (error) {
-      console.error("Error during logout:", error);
-    } finally {
-      // Limpa o token do localStorage e redireciona para a página de login
-      localStorage.removeItem("token");
-      window.location.href = "/"; // Redireciona para a página inicial ou de login
-    }
+    localStorage.removeItem("sessionToken");
+    localStorage.removeItem("sessionId");
+    localStorage.removeItem("sessionEmail");
+    localStorage.removeItem("sessionName");
+
+    navigate("/");
+    api.defaults.headers.common["Authorization"] = "";
   }
 
   return (
@@ -26,7 +54,7 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage, totalPages }) {
     >
       <div className="container-fluid">
         <Link className="navbar-brand" to="/appointments">
-          <img className="navbar-logo" src={logo} />
+          <img className="navbar-logo" src={logo} alt="Logo" />
         </Link>
         <button
           className="navbar-toggler"
@@ -53,6 +81,7 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage, totalPages }) {
               </Link>
             </li>
           </ul>
+
           <div className="d-flex align-items-center">
             <select
               className="form-select me-2"
@@ -65,21 +94,24 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage, totalPages }) {
               <option value={80}>80</option>
               <option value={100}>100</option>
             </select>
+
             <button
               className="btn btn-outline-light me-2"
-              onClick={() => setPage(page > 1 ? page - 1 : 1)}
-              disabled={page === 1}
+              onClick={() => setPage(Math.max(page - 1, 1))}
+              disabled={page <= 1}
             >
               Previous
             </button>
+
             <button
               className="btn btn-outline-light"
-              onClick={() => setPage(page < totalPages ? page + 1 : totalPages)}
-              disabled={page === totalPages}
+              onClick={() => setPage(Math.min(page + 1, totalPages))}
+              disabled={page >= totalPages}
             >
               Next
             </button>
           </div>
+
           <ul className="navbar-nav ">
             <li className="nav-item">
               <div className="btn-group">
