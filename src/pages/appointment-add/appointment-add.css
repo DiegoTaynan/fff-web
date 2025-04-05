@@ -30,3 +30,11 @@
   max-height: 200px;
   margin-top: 10px;
 }
+
+/* Estilo para as miniaturas das imagens em "Uploaded Images" */
+.uploaded-image-thumbnail {
+  width: 100%; /* Ajusta para ocupar toda a largura do container */
+  height: 150px; /* Define uma altura fixa */
+  object-fit: cover; /* Garante que a imagem seja cortada proporcionalmente para caber no espaço */
+  border-radius: 5px; /* Adiciona bordas arredondadas */
+}

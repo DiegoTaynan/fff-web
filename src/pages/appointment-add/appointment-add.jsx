@@ -92,7 +92,13 @@ function AppointmentAdd() {
     try {
       const response = await api.get(`/appointments/${id_appointment}/images`);
       if (Array.isArray(response.data)) {
-        setImages(response.data);
+        setImages(
+          response.data.map((img) => ({
+            id_image: img.id_image,
+            image_url: img.image_url,
+            isUploading: false, // Certifica-se de que as imagens carregadas não estão em estado de upload
+          }))
+        );
       } else {
         setImages([]);
       }
@@ -108,8 +114,13 @@ function AppointmentAdd() {
     const formData = new FormData();
     formData.append("image", file);
 
-    const newImage = { id_image: Date.now(), image_url: "", isUploading: true };
-    setImages([...images, newImage]); // Adiciona a imagem ao estado com isUploading
+    const tempImageId = `temp-${Date.now()}`;
+    const newImage = {
+      id_image: tempImageId,
+      image_url: URL.createObjectURL(file), // Exibe a pré-visualização local enquanto o upload está em andamento
+      isUploading: true,
+    };
+    setImages([...images, newImage]);
 
     try {
       const response = await api.post(
@@ -121,24 +132,25 @@ function AppointmentAdd() {
           },
         }
       );
-      if (response.data.imageUrl) {
+
+      if (response.data.imageUrl && response.data.id_image) {
         setImages((prevImages) =>
           prevImages.map((img) =>
-            img.id_image === newImage.id_image
+            img.id_image === tempImageId
               ? {
-                  ...img,
+                  id_image: response.data.id_image,
                   image_url: response.data.imageUrl,
                   isUploading: false,
                 }
               : img
           )
-        ); // Atualiza a imagem no estado
+        );
       }
     } catch (error) {
       alert("Error uploading image.");
       setImages((prevImages) =>
-        prevImages.filter((img) => img.id_image !== newImage.id_image)
-      ); // Remove a imagem em caso de erro
+        prevImages.filter((img) => img.id_image !== tempImageId)
+      );
     }
   }
 
@@ -435,18 +447,32 @@ function AppointmentAdd() {
               {images.length > 0 ? (
                 images.map((image) => (
                   <div key={image.id_image} className="col-4 mb-3">
-                    <img
-                      src={image.image_url}
-                      alt={`Uploaded ${image.id_image}`}
-                      className="img-thumbnail"
-                      style={{
-                        cursor: "pointer",
-                        opacity: image.isUploading ? 0.5 : 1,
-                      }}
-                      onClick={() =>
-                        !image.isUploading && setSelectedImage(image.image_url)
-                      } // Apenas permite clicar se não estiver em upload
-                    />
+                    {image.image_url ? ( // Exibe a imagem apenas se image_url estiver definido
+                      <img
+                        src={image.image_url}
+                        alt={`Uploaded ${image.id_image}`}
+                        className="uploaded-image-thumbnail" // Aplica o estilo padronizado
+                        style={{
+                          cursor: "pointer",
+                          opacity: image.isUploading ? 0.5 : 1,
+                        }}
+                        onClick={() =>
+                          !image.isUploading &&
+                          setSelectedImage(image.image_url)
+                        } // Apenas permite clicar se não estiver em upload
+                      />
+                    ) : (
+                      <div
+                        className="img-thumbnail d-flex align-items-center justify-content-center"
+                        style={{
+                          height: "150px",
+                          backgroundColor: "#f8f9fa",
+                          border: "1px dashed #ccc",
+                        }}
+                      >
+                        <p className="text-muted mb-0">Uploading...</p>
+                      </div>
+                    )}
                     {image.isUploading ? (
                       <p className="text-muted mt-2">Uploading...</p>
                     ) : (
