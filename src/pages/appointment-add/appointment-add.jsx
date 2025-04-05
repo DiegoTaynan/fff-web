@@ -2,6 +2,9 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/navbar/navbar.jsx";
 import { useEffect, useState } from "react";
 import api from "../../constants/api.js";
+import { confirmAlert } from "react-confirm-alert";
+import "react-confirm-alert/src/react-confirm-alert.css"; // Estilos para o modal de confirmação
+import "./appointment-add.css"; // Importe o arquivo CSS
 
 function AppointmentAdd() {
   const navigate = useNavigate();
@@ -9,19 +12,19 @@ function AppointmentAdd() {
   const [users, setUsers] = useState([]);
   const [mechanic, setMechanic] = useState([]);
   const [services, setServices] = useState([]);
-
+  const [images, setImages] = useState([]); // Estado para armazenar URLs das imagens
+  const [selectedImage, setSelectedImage] = useState(null); // Estado para a imagem selecionada no modal
   const [idUser, setIdUser] = useState("");
   const [idMechanic, setIdMechanic] = useState("");
   const [idService, setidService] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [bookingHour, setBookingHour] = useState("");
-  const [observations, setObservations] = useState(""); // Novo estado para observações
-  const [additionalServices, setAdditionalServices] = useState([]); // Novo estado para serviços adicionais
+  const [observations, setObservations] = useState("");
+  const [additionalServices, setAdditionalServices] = useState([]);
 
   async function LoadUsers() {
     try {
       const response = await api.get("/admin/users");
-
       if (response.data) {
         setUsers(response.data);
       }
@@ -36,10 +39,8 @@ function AppointmentAdd() {
   async function LoadMechanics() {
     try {
       const response = await api.get("mechanic");
-
       if (response.data) {
         setMechanic(response.data);
-
         if (id_appointment > 0) LoadAppointment(id_appointment);
       }
     } catch (error) {
@@ -53,9 +54,8 @@ function AppointmentAdd() {
   async function LoadAppointment(id) {
     try {
       const response = await api.get("/admin/appointments/" + id);
-
       if (response.data) {
-        console.log("Appointment Data:", response.data); // Adicione este log
+        console.log("Appointment Data:", response.data);
         setIdUser(response.data.id_user);
         setIdMechanic(response.data.id_mechanic);
         setidService(response.data.id_service);
@@ -75,9 +75,8 @@ function AppointmentAdd() {
   async function LoadServices() {
     try {
       const response = await api.get("/services");
-
       if (response.data) {
-        console.log("Services Data:", response.data); // Adicione este log
+        console.log("Services Data:", response.data);
         setServices(response.data);
       }
     } catch (error) {
@@ -88,6 +87,99 @@ function AppointmentAdd() {
     }
   }
 
+  async function LoadImages() {
+    if (!id_appointment) return;
+    try {
+      const response = await api.get(`/appointments/${id_appointment}/images`);
+      if (Array.isArray(response.data)) {
+        setImages(response.data);
+      } else {
+        setImages([]);
+      }
+    } catch (error) {
+      alert("Error loading images.");
+    }
+  }
+
+  async function handleUploadImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const newImage = { id_image: Date.now(), image_url: "", isUploading: true };
+    setImages([...images, newImage]); // Adiciona a imagem ao estado com isUploading
+
+    try {
+      const response = await api.post(
+        `/appointments/${id_appointment}/images`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      if (response.data.imageUrl) {
+        setImages((prevImages) =>
+          prevImages.map((img) =>
+            img.id_image === newImage.id_image
+              ? {
+                  ...img,
+                  image_url: response.data.imageUrl,
+                  isUploading: false,
+                }
+              : img
+          )
+        ); // Atualiza a imagem no estado
+      }
+    } catch (error) {
+      alert("Error uploading image.");
+      setImages((prevImages) =>
+        prevImages.filter((img) => img.id_image !== newImage.id_image)
+      ); // Remove a imagem em caso de erro
+    }
+  }
+
+  async function handleDeleteImage(imageId) {
+    try {
+      console.log(`Attempting to delete image with ID: ${imageId}`); // Log do ID da imagem
+      const response = await api.delete(
+        `/appointments/${id_appointment}/images/${imageId}`
+      );
+      console.log("Delete response:", response.data); // Log da resposta do backend
+      setImages((prevImages) =>
+        prevImages.filter((img) => img.id_image !== imageId)
+      ); // Atualiza o estado removendo a imagem
+    } catch (error) {
+      console.error(
+        "Error deleting image:",
+        error.response?.data || error.message
+      ); // Log detalhado do erro
+      alert(
+        `Error deleting image: ${error.response?.data?.error || error.message}`
+      );
+    }
+  }
+
+  function confirmDeleteImage(imageId) {
+    confirmAlert({
+      title: "Delete Confirmation",
+      message: "Are you sure you want to delete this image?",
+      buttons: [
+        {
+          label: "Yes",
+          onClick: () => handleDeleteImage(imageId),
+        },
+        {
+          label: "No",
+          onClick: () => {},
+        },
+      ],
+    });
+  }
+
   async function SaveAppointment() {
     const json = {
       id_user: idUser,
@@ -95,10 +187,9 @@ function AppointmentAdd() {
       id_service: idService,
       booking_date: bookingDate,
       booking_hour: bookingHour,
-      observations: observations, // Adicionar observações ao JSON
-      additional_services: additionalServices, // Adicionar serviços adicionais ao JSON
+      observations: observations,
+      additional_services: additionalServices,
     };
-
     try {
       const response =
         id_appointment > 0
@@ -119,7 +210,10 @@ function AppointmentAdd() {
   useEffect(() => {
     LoadUsers();
     LoadMechanics();
-  }, []);
+    if (id_appointment > 0) {
+      LoadImages();
+    }
+  }, [id_appointment]);
 
   useEffect(() => {
     LoadServices(idMechanic);
@@ -132,15 +226,13 @@ function AppointmentAdd() {
   function generateTimeSlots(day) {
     let startHour, endHour;
     if (day >= 1 && day <= 5) {
-      // Segunda a Sexta
       startHour = 8;
       endHour = 17.5;
     } else if (day === 6) {
-      // Sábado
       startHour = 8;
       endHour = 15.5;
     } else {
-      return []; // Domingo (sem horários disponíveis)
+      return [];
     }
 
     const timeSlots = [];
@@ -190,7 +282,6 @@ function AppointmentAdd() {
                 onChange={(e) => setIdUser(e.target.value)}
               >
                 <option value="0">Select the customer</option>
-
                 {users.map((u) => {
                   return (
                     <option key={u.id_user} value={u.id_user}>
@@ -214,7 +305,6 @@ function AppointmentAdd() {
                 onChange={(e) => setIdMechanic(e.target.value)}
               >
                 <option value="0">Select the mechanic</option>
-
                 {mechanic.map((m) => {
                   return (
                     <option key={m.id_mechanic} value={m.id_mechanic}>
@@ -238,14 +328,11 @@ function AppointmentAdd() {
                 onChange={(e) => setidService(e.target.value)}
               >
                 <option value="0">Select the service</option>
-
-                {services.map((s) => {
-                  return (
-                    <option key={s.id_service} value={s.id_service}>
-                      {s.service}
-                    </option>
-                  );
-                })}
+                {services.map((s) => (
+                  <option key={s.id_service} value={s.id_service}>
+                    {s.service}
+                  </option>
+                ))}
               </select>
             </div>
             <button
@@ -329,6 +416,88 @@ function AppointmentAdd() {
               onChange={(e) => setObservations(e.target.value)}
             ></textarea>
           </div>
+
+          <div className="col-12 mt-4">
+            <label htmlFor="uploadImage" className="form-label">
+              Upload Images
+            </label>
+            <input
+              type="file"
+              id="uploadImage"
+              className="form-control"
+              onChange={handleUploadImage}
+            />
+          </div>
+
+          <div className="col-12 mt-4">
+            <label className="form-label">Uploaded Images</label>
+            <div className="row">
+              {images.length > 0 ? (
+                images.map((image) => (
+                  <div key={image.id_image} className="col-4 mb-3">
+                    <img
+                      src={image.image_url}
+                      alt={`Uploaded ${image.id_image}`}
+                      className="img-thumbnail"
+                      style={{
+                        cursor: "pointer",
+                        opacity: image.isUploading ? 0.5 : 1,
+                      }}
+                      onClick={() =>
+                        !image.isUploading && setSelectedImage(image.image_url)
+                      } // Apenas permite clicar se não estiver em upload
+                    />
+                    {image.isUploading ? (
+                      <p className="text-muted mt-2">Uploading...</p>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm mt-2"
+                        onClick={() => confirmDeleteImage(image.id_image)} // Usa a função de confirmação
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p>No images uploaded.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Modal para exibir a imagem ampliada */}
+          {selectedImage && (
+            <div
+              className="modal"
+              style={{
+                display: "block",
+                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 1050,
+              }}
+              onClick={() => setSelectedImage(null)} // Fecha o modal ao clicar fora
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <img
+                  src={selectedImage}
+                  alt="Selected"
+                  style={{ maxWidth: "90vw", maxHeight: "90vh" }}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="col-12 mt-4">
             <div className="d-flex justify-content-end">

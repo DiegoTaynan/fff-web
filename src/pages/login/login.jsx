@@ -21,14 +21,20 @@ function Login() {
       });
 
       if (response.data) {
-        localStorage.setItem("sessionToken", response.data.token);
+        // Salve o token com a chave "token" para consistência
+        localStorage.setItem("token", response.data.token);
         localStorage.setItem("sessionId", response.data.id_admin);
         localStorage.setItem("sessionEmail", response.data.email);
         localStorage.setItem("sessionName", response.data.name);
+
+        // Configure o cabeçalho Authorization para futuras requisições
         api.defaults.headers.common["Authorization"] =
           "Bearer " + response.data.token;
+
         navigate("/appointments");
-      } else setMsg("Error logging in. Please try again later.");
+      } else {
+        setMsg("Error logging in. Please try again later.");
+      }
     } catch (error) {
       if (error.response?.data.error) setMsg(error.response?.data.error);
       else setMsg("Error logging in. Please try again later.");
