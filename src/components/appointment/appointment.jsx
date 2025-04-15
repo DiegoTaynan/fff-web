@@ -17,7 +17,7 @@ function Appointment(props) {
   const [progress, setProgress] = useState(props.progress || "In progress");
 
   async function handleProgressClick() {
-    const newStatus = progress === "In progress" ? "C" : "P"; // Alterado para "C" e "P"
+    const newStatus = progress === "In progress" ? "C" : "P"; // Envia "C" ou "P" para o backend
 
     confirmAlert({
       title: "Confirm Status Change",
@@ -39,7 +39,7 @@ function Appointment(props) {
                 alert("Error updating status");
               }
             } catch (error) {
-              console.error("Error updating status:", error); // Adicionado log para depuração
+              console.error("Error updating status:", error); // Log para depuração
               alert("Error updating status. Please try again later.");
             }
           },
@@ -47,7 +47,7 @@ function Appointment(props) {
         {
           label: "No",
           onClick: () => {
-            // Garantir que o callback "No" não cause problemas
+            // Nenhuma ação necessária
           },
         },
       ],
