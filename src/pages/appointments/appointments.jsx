@@ -73,6 +73,14 @@ function Appointments() {
 
   async function LoadAppointments() {
     try {
+      console.log("Loading Appointments with Params:", {
+        id_mechanic: idMechanic,
+        dt_start: dtStart,
+        dt_end: dtEnd,
+        page,
+        limit: itemsPerPage,
+      }); // Log dos parâmetros enviados
+
       const response = await api.get("/admin/appointments", {
         params: {
           id_mechanic: idMechanic,
@@ -82,6 +90,8 @@ function Appointments() {
           limit: itemsPerPage,
         },
       });
+
+      console.log("Loaded Appointments Response:", response.data); // Log da resposta do backend
 
       if (response.data) {
         const appointmentsData = response.data.data || response.data;
@@ -94,7 +104,7 @@ function Appointments() {
         setTotalPages(1);
       }
     } catch (error) {
-      console.error("Error loading appointments:", error);
+      console.error("Error loading appointments:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);

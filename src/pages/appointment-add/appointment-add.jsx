@@ -55,7 +55,7 @@ function AppointmentAdd() {
     try {
       const response = await api.get("/admin/appointments/" + id);
       if (response.data) {
-        console.log("Appointment Data:", response.data);
+        console.log("Loaded Appointment Data:", response.data); // Log completo dos dados carregados
         setIdUser(response.data.id_user);
         setIdMechanic(response.data.id_mechanic);
         setidService(response.data.id_service);
@@ -65,6 +65,7 @@ function AppointmentAdd() {
         setAdditionalServices(response.data.additional_services || []);
       }
     } catch (error) {
+      console.error("Error loading appointment:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -199,19 +200,25 @@ function AppointmentAdd() {
       id_service: idService,
       booking_date: bookingDate,
       booking_hour: bookingHour,
-      observations: observations,
+      observations: observations, // Certifique-se de enviar as observações
       additional_services: additionalServices,
     };
+
+    console.log("Saving Appointment Data:", json); // Log dos dados enviados para salvar
+
     try {
       const response =
         id_appointment > 0
-          ? await api.put("/admin/appointments/" + id_appointment, json)
+          ? await api.put(`/admin/appointments/${id_appointment}`, json)
           : await api.post("/admin/appointments", json);
+
+      console.log("Save Response:", response.data); // Log da resposta do backend
 
       if (response.data) {
         navigate("/appointments");
       }
     } catch (error) {
+      console.error("Error saving appointment:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
