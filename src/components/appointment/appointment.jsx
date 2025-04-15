@@ -17,11 +17,13 @@ function Appointment(props) {
   const [progress, setProgress] = useState(props.progress || "In progress");
 
   async function handleProgressClick() {
-    const newStatus = progress === "In progress" ? "Completed" : "In progress";
+    const newStatus = progress === "In progress" ? "C" : "P"; // Alterado para "C" e "P"
 
     confirmAlert({
       title: "Confirm Status Change",
-      message: `Are you sure you want to change the status to ${newStatus}?`,
+      message: `Are you sure you want to change the status to ${
+        newStatus === "C" ? "Completed" : "In Progress"
+      }?`,
       buttons: [
         {
           label: "Yes",
@@ -32,7 +34,7 @@ function Appointment(props) {
                 { status: newStatus }
               );
               if (response.status === 200) {
-                setProgress(newStatus);
+                setProgress(newStatus === "C" ? "Completed" : "In progress"); // Atualiza o estado local
               } else {
                 alert("Error updating status");
               }
