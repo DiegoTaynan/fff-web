@@ -16,7 +16,7 @@ function Register() {
   async function ExecuteAccount() {
     setMsg("");
 
-    if (password != password2)
+    if (password !== password2)
       return setMsg("Passwords do not match. Please try again.");
 
     try {
@@ -26,16 +26,19 @@ function Register() {
         password,
       });
 
+      console.log("Register response:", response.data); // Log para verificar o valor retornado
       if (response.data) {
         localStorage.setItem("sessionToken", response.data.token);
         localStorage.setItem("sessionId", response.data.id_admin);
         localStorage.setItem("sessionEmail", email);
         localStorage.setItem("sessionName", name);
+        localStorage.setItem("isAdmin", "true"); // Certifique-se de armazenar "true" para administradores
         api.defaults.headers.common["Authorization"] =
           "Bearer " + response.data.token;
         navigate("/appointments");
       } else setMsg("Error creating account. Please try again later.");
     } catch (error) {
+      console.error("Register error:", error); // Log detalhado do erro
       if (error.response?.data.error) setMsg(error.response?.data.error);
       else setMsg("Error creating account. Please try again later.");
     }

@@ -20,14 +20,15 @@ function Login() {
         password,
       });
 
+      console.log("Login response:", response.data); // Log para depuração
+
       if (response.data) {
-        // Salve o token com a chave "token" para consistência
-        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("sessionToken", response.data.token);
         localStorage.setItem("sessionId", response.data.id_admin);
         localStorage.setItem("sessionEmail", response.data.email);
         localStorage.setItem("sessionName", response.data.name);
+        localStorage.setItem("isAdmin", "true"); // Certifique-se de armazenar "true" para administradores
 
-        // Configure o cabeçalho Authorization para futuras requisições
         api.defaults.headers.common["Authorization"] =
           "Bearer " + response.data.token;
 
@@ -36,6 +37,7 @@ function Login() {
         setMsg("Error logging in. Please try again later.");
       }
     } catch (error) {
+      console.error("Login error:", error); // Log detalhado do erro
       if (error.response?.data.error) setMsg(error.response?.data.error);
       else setMsg("Error logging in. Please try again later.");
     }

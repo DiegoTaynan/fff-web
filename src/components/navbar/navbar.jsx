@@ -2,11 +2,12 @@ import "./navbar.css";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo-white.png";
 import React, { useState, useEffect } from "react";
-import api from "../../services/api"; // Certifique-se de que o caminho está correto
+import api from "../../services/api";
 
 function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
   const navigate = useNavigate();
   const [totalItems, setTotalItems] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function fetchTotalItems() {
@@ -18,10 +19,10 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
         if (response && response.data && response.data.total) {
           setTotalItems(response.data.total);
         } else {
-          setTotalItems(0); // Garante que não seja `undefined`
+          setTotalItems(0);
         }
       } catch (error) {
-        setTotalItems(0); // Evita erro caso a API falhe
+        setTotalItems(0);
       }
     }
 
@@ -37,11 +38,18 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
     }
   }, []);
 
+  useEffect(() => {
+    const adminStatus = localStorage.getItem("isAdmin") === "true";
+    console.log("Admin status from localStorage:", adminStatus); // Log para depuração
+    setIsAdmin(adminStatus);
+  }, []);
+
   function Logout() {
     localStorage.removeItem("sessionToken");
     localStorage.removeItem("sessionId");
     localStorage.removeItem("sessionEmail");
     localStorage.removeItem("sessionName");
+    localStorage.removeItem("isAdmin");
 
     navigate("/");
     api.defaults.headers.common["Authorization"] = "";
@@ -129,6 +137,17 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
                       Meu Perfil
                     </Link>
                   </li>
+                  <li>
+                    <hr className="dropdown-divider" />
+                  </li>
+
+                  {isAdmin && (
+                    <li>
+                      <Link className="dropdown-item" to="/admin">
+                        Administration
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <hr className="dropdown-divider" />
                   </li>

@@ -1,0 +1,73 @@
+.admin-container {
+  padding: 20px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.admin-table th,
+.admin-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.admin-table th {
+  background-color: #f4f4f4;
+}
+
+.btn-approve {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.btn-reject {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.btn-approve:hover,
+.btn-reject:hover {
+  opacity: 0.8;
+}
+
+.mt-page {
+  margin-top: 80px;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.col-buttons {
+  width: 150px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.page-item {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.page-item.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
