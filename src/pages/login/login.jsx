@@ -3,7 +3,7 @@ import "./login.css";
 import logo from "../../assets/logo.png";
 import fundo from "../../assets/fundo.jpg";
 import { useState } from "react";
-import api from "../../constants/api.js";
+import api from "../../services/api";
 
 function Login() {
   const navigate = useNavigate();
@@ -22,17 +22,17 @@ function Login() {
 
       console.log("Login response:", response.data); // Log para depuração
 
-      if (response.data) {
+      if (response.status === 200) {
         localStorage.setItem("sessionToken", response.data.token);
         localStorage.setItem("sessionId", response.data.id_admin);
         localStorage.setItem("sessionEmail", response.data.email);
         localStorage.setItem("sessionName", response.data.name);
-        localStorage.setItem("isAdmin", "true"); // Certifique-se de armazenar "true" para administradores
+        localStorage.setItem("isAdmin", true); // Certifique-se de armazenar "true" para administradores
 
         api.defaults.headers.common["Authorization"] =
           "Bearer " + response.data.token;
 
-        navigate("/appointments");
+        navigate("/admin");
       } else {
         setMsg("Error logging in. Please try again later.");
       }

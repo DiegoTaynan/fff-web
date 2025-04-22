@@ -17,7 +17,7 @@ function AdminPage() {
 
       if (response.data) {
         const adminsData = response.data;
-        setUsers(adminsData || []);
+        setUsers(adminsData || []); // Atualiza os dados com os valores do banco
         setTotalPages(1); // Atualize se a paginação for necessária no futuro
       } else {
         setUsers([]);
