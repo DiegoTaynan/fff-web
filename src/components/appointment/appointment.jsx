@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
 import api from "../../constants/api.js"; // Certifique-se de que o caminho está correto
@@ -14,10 +14,15 @@ function Appointment(props) {
     .toString()
     .padStart(2, "0")}/${dt.getFullYear().toString().slice(-2)}`;
 
-  const [progress, setProgress] = useState(props.progress || "In progress");
+  const [progress, setProgress] = useState(props.progress); // Inicializa com o valor vindo do banco
+
+  useEffect(() => {
+    // Sincroniza o estado inicial com o valor vindo do banco
+    setProgress(props.progress);
+  }, [props.progress]);
 
   async function handleProgressClick() {
-    const newStatus = progress === "In progress" ? "C" : "P"; // Envia "C" ou "P" para o backend
+    const newStatus = progress === "C" ? "P" : "C"; // Alterna entre "C" e "P"
 
     confirmAlert({
       title: "Confirm Status Change",
@@ -34,7 +39,7 @@ function Appointment(props) {
                 { status: newStatus }
               );
               if (response.status === 200) {
-                setProgress(newStatus === "C" ? "Completed" : "In progress"); // Atualiza o estado local
+                setProgress(newStatus); // Atualiza o estado local com "C" ou "P"
               } else {
                 alert("Error updating status");
               }
@@ -63,11 +68,11 @@ function Appointment(props) {
         {formattedDate} - {props.booking_hour}h
       </td>
       <td>
-        {progress}{" "}
+        {progress === "C" ? "Completed" : "In Progress"}{" "}
         <button
           onClick={handleProgressClick}
           className={`btn btn-sm ${
-            progress === "In progress" ? "btn-secondary" : "btn-success"
+            progress === "C" ? "btn-success" : "btn-secondary"
           }`}
         >
           <i className="bi bi-check2-square"></i>
