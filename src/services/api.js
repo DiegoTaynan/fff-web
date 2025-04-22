@@ -7,7 +7,7 @@ const api = axios.create({
 // Interceptor para adicionar o token de autenticação
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token"); // Certifique-se de usar a mesma chave
+    const token = localStorage.getItem("sessionToken"); // Certifique-se de usar a chave correta
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
@@ -25,7 +25,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Erro de autenticação tratado
+      // Redirecionar para a página de login em caso de erro de autenticação
+      localStorage.removeItem("sessionToken"); // Remove o token inválido
+      alert("Your session has expired. Please log in again."); // Notifica o usuário
+      window.location.href = "/login"; // Redireciona para a página de login
     }
     return Promise.reject(error);
   }

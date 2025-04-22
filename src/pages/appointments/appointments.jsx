@@ -105,10 +105,15 @@ function Appointments() {
       }
     } catch (error) {
       console.error("Error loading appointments:", error); // Log detalhado do erro
-      if (error.response?.data.error) {
-        if (error.response.status === 401) return navigate("/");
-        alert(error.response?.data.error);
-      } else alert("Error loading appointments. Please try again later.");
+      if (error.response?.data?.error) {
+        if (error.response.status === 401) {
+          localStorage.removeItem("sessionToken"); // Remove o token inválido
+          return navigate("/login"); // Redireciona para o login
+        }
+        alert(error.response?.data?.error);
+      } else {
+        alert("Error loading appointments. Please try again later.");
+      }
     }
   }
 
