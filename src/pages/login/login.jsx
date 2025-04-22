@@ -32,7 +32,7 @@ function Login() {
         api.defaults.headers.common["Authorization"] =
           "Bearer " + response.data.token;
 
-        navigate("/admin");
+        navigate("/appointments");
       } else {
         setMsg("Error logging in. Please try again later.");
       }
