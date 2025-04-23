@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:3001", // Substitua pela URL correta do backend
+  baseURL: "http://familyfriendsadmin.com:3001", // Substitua pela URL correta do backend
 });
 
 // Adiciona o token de autenticação em todas as requisições
