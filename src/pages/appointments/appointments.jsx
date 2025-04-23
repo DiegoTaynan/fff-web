@@ -41,13 +41,20 @@ function Appointments() {
 
   async function DeleteAppointments(id) {
     try {
-      const response = await api.delete("/appointments/" + id);
+      const token = localStorage.getItem("token");
+      console.log("Token for DeleteAppointments:", token); // Log do token
+      console.log("Deleting appointment with ID:", id); // Log do ID
 
+      const response = await api.delete("/appointments/" + id, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("Delete response:", response); // Log da resposta
       if (response.data) {
         await LoadAppointments();
       }
     } catch (error) {
-      console.error("Error deleting appointment:", error);
+      console.error("Error deleting appointment:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -57,13 +64,20 @@ function Appointments() {
 
   async function LoadMechanics() {
     try {
-      const response = await api.get("/mechanic");
+      const token = localStorage.getItem("token");
+      console.log("Token for LoadMechanics:", token); // Log do token
+      console.log("Loading mechanics..."); // Log inicial
 
+      const response = await api.get("/mechanic", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("Mechanics response:", response); // Log da resposta
       if (response.data) {
         setMechanic(response.data || []);
       }
     } catch (error) {
-      console.error("Error loading mechanics:", error);
+      console.error("Error loading mechanics:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -73,6 +87,16 @@ function Appointments() {
 
   async function LoadAppointments() {
     try {
+      const token = localStorage.getItem("token");
+      console.log("Token for LoadAppointments:", token); // Log do token
+      console.log("Loading Appointments with Params:", {
+        id_mechanic: idMechanic,
+        dt_start: dtStart,
+        dt_end: dtEnd,
+        page,
+        limit: itemsPerPage,
+      }); // Log dos parâmetros enviados
+
       const response = await api.get("/admin/appointments", {
         params: {
           id_mechanic: idMechanic,
@@ -81,7 +105,10 @@ function Appointments() {
           page,
           limit: itemsPerPage,
         },
+        headers: { Authorization: `Bearer ${token}` },
       });
+
+      console.log("Loaded Appointments Response:", response.data); // Log da resposta do backend
 
       if (response.data) {
         const appointmentsData = response.data.data || response.data;
@@ -94,7 +121,7 @@ function Appointments() {
         setTotalPages(1);
       }
     } catch (error) {
-      console.error("Error loading appointments:", error);
+      console.error("Error loading appointments:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);

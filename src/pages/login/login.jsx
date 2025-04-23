@@ -3,7 +3,7 @@ import "./login.css";
 import logo from "../../assets/logo.png";
 import fundo from "../../assets/fundo.jpg";
 import { useState } from "react";
-import api from "../../constants/api.js";
+import api from "../../services/api";
 
 function Login() {
   const navigate = useNavigate();
@@ -15,21 +15,36 @@ function Login() {
     setMsg("");
 
     try {
+      console.log("Attempting login with email:", email); // Log do email
       const response = await api.post("/admin/login", {
         email,
         password,
       });
 
-      if (response.data) {
-        localStorage.setItem("sessionToken", response.data.token);
+      console.log("Login response:", response.data); // Log para depuração
+
+      if (response.status === 200) {
+        const token = response.data.token;
+        localStorage.setItem("token", token); // Armazena o token correto
+        console.log("Token stored in localStorage:", token); // Log do token armazenado
+
         localStorage.setItem("sessionId", response.data.id_admin);
         localStorage.setItem("sessionEmail", response.data.email);
         localStorage.setItem("sessionName", response.data.name);
-        api.defaults.headers.common["Authorization"] =
-          "Bearer " + response.data.token;
+        localStorage.setItem("isAdmin", true);
+
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`; // Configura o token no axios
+        console.log(
+          "Authorization header set:",
+          api.defaults.headers.common["Authorization"]
+        ); // Log do header configurado
+
         navigate("/appointments");
-      } else setMsg("Error logging in. Please try again later.");
+      } else {
+        setMsg("Error logging in. Please try again later.");
+      }
     } catch (error) {
+      console.error("Login error:", error); // Log detalhado do erro
       if (error.response?.data.error) setMsg(error.response?.data.error);
       else setMsg("Error logging in. Please try again later.");
     }
