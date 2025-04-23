@@ -15,6 +15,7 @@ function Login() {
     setMsg("");
 
     try {
+      console.log("Attempting login with email:", email); // Log do email
       const response = await api.post("/admin/login", {
         email,
         password,
@@ -23,30 +24,29 @@ function Login() {
       console.log("Login response:", response.data); // Log para depuração
 
       if (response.status === 200) {
-        const token = response.data.token; // Certifique-se de usar a chave correta
-        if (token) {
-          localStorage.setItem("sessionToken", token); // Armazena o token no localStorage
-          localStorage.setItem("sessionId", response.data.id_admin);
-          localStorage.setItem("sessionEmail", response.data.email);
-          localStorage.setItem("sessionName", response.data.name);
-          localStorage.setItem("isAdmin", true); // Certifique-se de armazenar "true" para administradores
+        const token = response.data.token;
+        localStorage.setItem("token", token); // Armazena o token correto
+        console.log("Token stored in localStorage:", token); // Log do token armazenado
 
-          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        localStorage.setItem("sessionId", response.data.id_admin);
+        localStorage.setItem("sessionEmail", response.data.email);
+        localStorage.setItem("sessionName", response.data.name);
+        localStorage.setItem("isAdmin", true);
 
-          navigate("/appointments");
-        } else {
-          setMsg("Error: Token not received. Please try again.");
-        }
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`; // Configura o token no axios
+        console.log(
+          "Authorization header set:",
+          api.defaults.headers.common["Authorization"]
+        ); // Log do header configurado
+
+        navigate("/appointments");
       } else {
         setMsg("Error logging in. Please try again later.");
       }
     } catch (error) {
       console.error("Login error:", error); // Log detalhado do erro
-      if (error.response?.data?.error) {
-        setMsg(error.response.data.error);
-      } else {
-        setMsg("Error logging in. Please try again later.");
-      }
+      if (error.response?.data.error) setMsg(error.response?.data.error);
+      else setMsg("Error logging in. Please try again later.");
     }
   }
 
