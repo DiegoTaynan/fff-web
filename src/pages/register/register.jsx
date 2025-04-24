@@ -3,7 +3,7 @@ import "./register.css";
 import logo from "../../assets/logo.png";
 import fundo from "../../assets/fundo.jpg";
 import { useState } from "react";
-import api from "../../constants/api";
+import api from "../../services/api";
 
 function Register() {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/navbar/navbar.jsx";
 import { useEffect, useState } from "react";
-import api from "../../constants/api.js";
+import api from "../../services/api";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css"; // Estilos para o modal de confirmação
 import "./appointment-add.css"; // Importe o arquivo CSS

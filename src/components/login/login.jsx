@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import api from "../../constants/api.js"; // Certifique-se de que o caminho está correto
+import api from "../../services/api"; // Certifique-se de que o caminho está correto
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../app.jsx"; // Importa o contexto global
 

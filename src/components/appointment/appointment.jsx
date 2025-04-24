@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
-import api from "../../constants/api.js"; // Certifique-se de que o caminho está correto
+import api from "../../services/api"; // Certifique-se de que o caminho está correto
 
 function Appointment(props) {
   console.log("Appointment Props:", props); // Log para verificar os dados recebidos pelo componente
