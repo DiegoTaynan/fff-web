@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://familyfriendsadmin.com:3001", // Substitua pela URL base da sua API
+  baseURL: "https://familyfriendsadmin.com", // Substitua pela URL base da sua API
 });
 
 // Interceptor para adicionar o token de autenticação
