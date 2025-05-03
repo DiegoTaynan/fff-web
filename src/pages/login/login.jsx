@@ -16,6 +16,8 @@ function Login() {
 
     try {
       console.log("Attempting login with email:", email); // Log do email
+
+      // Tentar autenticar diretamente na API
       const response = await api.post("/admin/login", {
         email,
         password,
@@ -23,15 +25,22 @@ function Login() {
 
       console.log("Login response:", response.data); // Log para depuração
 
-      if (response.status === 200) {
+      if (response.status === 200 && response.data.token) {
         const token = response.data.token;
         localStorage.setItem("token", token); // Armazena o token correto
         console.log("Token stored in localStorage:", token); // Log do token armazenado
 
-        localStorage.setItem("sessionId", response.data.id_admin);
-        localStorage.setItem("sessionEmail", response.data.email);
-        localStorage.setItem("sessionName", response.data.name);
-        localStorage.setItem("isAdmin", true);
+        localStorage.setItem("sessionId", response.data.id_admin || "");
+        localStorage.setItem("sessionEmail", response.data.email || email);
+        localStorage.setItem("sessionName", response.data.name || email);
+        localStorage.setItem(
+          "isAdmin",
+          response.data.is_admin ? "true" : "false"
+        );
+
+        // Set expirationTime for the token (1 day expiry)
+        const expirationTime = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+        localStorage.setItem("tokenExpiration", expirationTime);
 
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`; // Configura o token no axios
         console.log(
@@ -41,12 +50,20 @@ function Login() {
 
         navigate("/appointments");
       } else {
-        setMsg("Error logging in. Please try again later.");
+        setMsg("Erro ao fazer login. Resposta inválida do servidor.");
       }
     } catch (error) {
       console.error("Login error:", error); // Log detalhado do erro
-      if (error.response?.data.error) setMsg(error.response?.data.error);
-      else setMsg("Error logging in. Please try again later.");
+
+      if (error.response?.data?.error) {
+        setMsg(error.response.data.error);
+      } else if (error.message === "Network Error") {
+        setMsg(
+          "Erro de conexão. Verifique sua internet ou se o servidor está online."
+        );
+      } else {
+        setMsg("Erro ao fazer login. Por favor, tente novamente mais tarde.");
+      }
     }
   }
 

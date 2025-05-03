@@ -3,33 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo-white.png";
 import React, { useState, useEffect } from "react";
 import api from "../../services/api";
+import { clearAuthData } from "../../services/auth";
 
-function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
+function Navbar({ itemsPerPage, setItemsPerPage, page, setPage, totalPages }) {
   const navigate = useNavigate();
-  const [totalItems, setTotalItems] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    async function fetchTotalItems() {
-      try {
-        const response = await api.get("/appointments", {
-          params: { page: 1, limit: 1 },
-        });
-
-        if (response && response.data && response.data.total) {
-          setTotalItems(response.data.total);
-        } else {
-          setTotalItems(0);
-        }
-      } catch (error) {
-        setTotalItems(0);
-      }
-    }
-
-    fetchTotalItems();
-  }, []);
-
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   useEffect(() => {
     const token = localStorage.getItem("sessionToken");
@@ -44,15 +22,18 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
     setIsAdmin(adminStatus);
   }, []);
 
-  function Logout() {
-    localStorage.removeItem("sessionToken");
-    localStorage.removeItem("sessionId");
-    localStorage.removeItem("sessionEmail");
-    localStorage.removeItem("sessionName");
-    localStorage.removeItem("isAdmin");
+  useEffect(() => {
+    console.log(
+      `Navbar - Página atual: ${page}, Total de páginas: ${totalPages}`
+    );
+  }, [page, totalPages]);
 
-    navigate("/");
-    api.defaults.headers.common["Authorization"] = "";
+  function Logout() {
+    // Use the centralized clearAuthData function
+    clearAuthData();
+
+    // Navigate to login page
+    window.location.href = "/";
   }
 
   return (
@@ -94,7 +75,12 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
             <select
               className="form-select me-2"
               value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              onChange={(e) => {
+                const newItemsPerPage = Number(e.target.value);
+                setItemsPerPage(newItemsPerPage);
+                // Ajusta a página atual quando mudamos o tamanho da página
+                setPage(1);
+              }}
             >
               <option value={20}>20</option>
               <option value={40}>40</option>
@@ -110,6 +96,10 @@ function Navbar({ itemsPerPage, setItemsPerPage, page, setPage }) {
             >
               Previous
             </button>
+
+            <span className="text-light mx-2">
+              {page} / {totalPages}
+            </span>
 
             <button
               className="btn btn-outline-light"

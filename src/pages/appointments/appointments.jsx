@@ -17,6 +17,8 @@ function Appointments() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [allAppointments, setAllAppointments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   function ClickEdit(id_appointment) {
     navigate("/appointments/edit/" + id_appointment);
@@ -87,56 +89,151 @@ function Appointments() {
 
   async function LoadAppointments() {
     try {
+      setIsLoading(true);
       const token = localStorage.getItem("token");
-      console.log("Token for LoadAppointments:", token); // Log do token
-      console.log("Loading Appointments with Params:", {
-        id_mechanic: idMechanic,
-        dt_start: dtStart,
-        dt_end: dtEnd,
-        page,
-        limit: itemsPerPage,
-      }); // Log dos parâmetros enviados
+      console.log("Token for LoadAppointments:", token);
+      console.log("Current page:", page, "Items per page:", itemsPerPage);
 
+      // Adicionando parâmetros de paginação mais explícitos para garantir que a API entenda
       const response = await api.get("/admin/appointments", {
         params: {
-          id_mechanic: idMechanic,
-          dt_start: dtStart,
-          dt_end: dtEnd,
-          page,
+          id_mechanic: idMechanic || null,
+          dt_start: dtStart || null,
+          dt_end: dtEnd || null,
+          page: page, // Explícito para a API
+          per_page: itemsPerPage, // Algumas APIs usam per_page em vez de limit
           limit: itemsPerPage,
+          offset: (page - 1) * itemsPerPage, // Algumas APIs usam offset
         },
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Loaded Appointments Response:", response.data); // Log da resposta do backend
+      console.log("API Response Structure:", response.data);
 
-      if (response.data) {
-        const appointmentsData = response.data.data || response.data;
-        const totalItems = response.data.totalItems || appointmentsData.length;
+      // Verificando o formato da resposta para determinar onde estão os dados e a informação de paginação
+      let appointmentsData = [];
+      let totalItems = 0;
 
-        setAppointments(appointmentsData || []);
-        setTotalPages(Math.ceil(totalItems / itemsPerPage));
-      } else {
-        setAppointments([]);
-        setTotalPages(1);
+      // Caso 1: A API retorna {data: [...], totalItems: number} ou formato similar
+      if (response.data && typeof response.data === "object") {
+        // Verificando diferentes formatos comuns de resposta paginada
+        if (Array.isArray(response.data.data)) {
+          console.log("Formato detectado: { data: [...], ... }");
+          appointmentsData = response.data.data;
+
+          // Procurando por informações de total em diferentes propriedades
+          totalItems =
+            response.data.totalItems ||
+            response.data.total ||
+            response.data.count ||
+            response.data.meta?.total ||
+            0;
+        }
+        // Caso 2: A API retorna um array diretamente
+        else if (Array.isArray(response.data)) {
+          console.log("Formato detectado: Array direto");
+          appointmentsData = response.data;
+
+          // Verificando se há headers com informações de paginação
+          const totalHeader =
+            response.headers["x-total-count"] ||
+            response.headers["X-Total-Count"];
+          if (totalHeader) {
+            totalItems = parseInt(totalHeader, 10);
+            console.log(`Total de itens obtido do header: ${totalItems}`);
+          } else {
+            // Se não temos informação de total, fazer uma chamada adicional para contar
+            console.log("Fazendo chamada adicional para obter contagem total");
+            try {
+              const countResponse = await api.get("/admin/appointments/count", {
+                params: {
+                  id_mechanic: idMechanic || null,
+                  dt_start: dtStart || null,
+                  dt_end: dtEnd || null,
+                },
+                headers: { Authorization: `Bearer ${token}` },
+              });
+
+              if (countResponse.data) {
+                if (typeof countResponse.data === "number") {
+                  totalItems = countResponse.data;
+                } else if (typeof countResponse.data === "object") {
+                  totalItems =
+                    countResponse.data.count ||
+                    countResponse.data.total ||
+                    appointmentsData.length;
+                }
+              }
+            } catch (countError) {
+              console.warn("Erro ao obter contagem:", countError);
+              // Se falhar, assumimos que há apenas os itens recebidos
+              totalItems = appointmentsData.length;
+            }
+          }
+        }
+        // Caso 3: Outro formato de objeto - tenta encontrar arrays dentro do objeto
+        else {
+          console.log("Formato detectado: Objeto com estrutura diferente");
+          const keys = Object.keys(response.data);
+          for (const key of keys) {
+            const value = response.data[key];
+            if (Array.isArray(value)) {
+              console.log(
+                `Array encontrado em ${key} com ${value.length} itens`
+              );
+              appointmentsData = value;
+              break;
+            }
+          }
+          totalItems = appointmentsData.length;
+        }
       }
+
+      // Log para diagnóstico
+      console.log(`Dados obtidos: ${appointmentsData.length} itens`);
+      console.log(`Total estimado: ${totalItems} itens`);
+
+      // Atualiza o estado com os dados da API
+      setAppointments(appointmentsData);
+
+      // Calcula o número total de páginas
+      const calculatedTotalPages = Math.max(
+        Math.ceil(totalItems / itemsPerPage),
+        1
+      );
+      console.log(`Total de páginas calculado: ${calculatedTotalPages}`);
+      setTotalPages(calculatedTotalPages);
     } catch (error) {
-      console.error("Error loading appointments:", error); // Log detalhado do erro
+      console.error("Error loading appointments:", error);
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
       } else alert("Error loading appointments. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
   }
+
+  // Handler para aplicar filtros e resetar a paginação
+  function ApplyFilters() {
+    setPage(1); // Volta para a primeira página
+    setAllAppointments([]); // Limpa qualquer dados armazenados localmente
+    LoadAppointments();
+  }
+
+  // Efeito para mudar a paginação local quando a página ou itemsPerPage mudam
+  useEffect(() => {
+    LoadAppointments();
+  }, [page, itemsPerPage]);
+
+  // Efeito para carregar mecânicos apenas uma vez
+  useEffect(() => {
+    LoadMechanics();
+  }, []);
 
   function ChangeMechanic(e) {
     setIdMechanic(e.target.value);
   }
-
-  useEffect(() => {
-    LoadMechanics();
-    LoadAppointments();
-  }, [page, itemsPerPage]);
 
   return (
     <div className="container-fluid mt-page">
@@ -187,64 +284,92 @@ function Appointments() {
             </select>
           </div>
           <button
-            onClick={LoadAppointments}
+            onClick={ApplyFilters}
             className="btn btn-primary"
             type="button"
+            disabled={isLoading}
           >
-            Filter
+            {isLoading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-1"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Loading...
+              </>
+            ) : (
+              "Filter"
+            )}
           </button>
         </div>
       </div>
 
       <div>
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Customer</th>
-              <th scope="col">Mechanic</th>
-              <th scope="col">Service</th>
-              <th scope="col">Date/Hour</th>
-              <th scope="col">Progress</th>
-              <th scope="col" className="col-buttons"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {appointments.length > 0 ? (
-              appointments.map((ap) => (
-                <Appointment
-                  key={ap.id_appointment}
-                  id_appointment={ap.id_appointment}
-                  user={ap.user}
-                  mechanic={ap.mechanic}
-                  service={ap.service}
-                  booking_date={ap.booking_date}
-                  booking_hour={ap.booking_hour}
-                  progress={ap.progress}
-                  clickEdit={ClickEdit}
-                  clickDelete={ClickDelete}
-                />
-              ))
-            ) : (
+        {isLoading ? (
+          <div className="d-flex justify-content-center my-5">
+            <div className="spinner-border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        ) : (
+          <table className="table table-hover">
+            <thead>
               <tr>
-                <td colSpan="6" className="text-center">
-                  No appointments found.
-                </td>
+                <th scope="col">Customer</th>
+                <th scope="col">Mechanic</th>
+                <th scope="col">Service</th>
+                <th scope="col">Date/Hour</th>
+                <th scope="col">Progress</th>
+                <th scope="col" className="col-buttons"></th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {appointments.length > 0 ? (
+                appointments.map((ap) => (
+                  <Appointment
+                    key={ap.id_appointment}
+                    id_appointment={ap.id_appointment}
+                    user={ap.user}
+                    mechanic={ap.mechanic}
+                    service={ap.service}
+                    booking_date={ap.booking_date}
+                    booking_hour={ap.booking_hour}
+                    progress={ap.progress}
+                    clickEdit={ClickEdit}
+                    clickDelete={ClickDelete}
+                  />
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center">
+                    No appointments found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <div className="pagination">
-        {Array.from({ length: totalPages }, (_, index) => (
-          <button
-            key={index}
-            className={`page-item ${index + 1 === page ? "active" : ""}`}
-            onClick={() => setPage(index + 1)}
-          >
-            {index + 1}
-          </button>
-        ))}
+      <div className="d-flex justify-content-between align-items-center mt-3">
+        <div>
+          <p className="mb-0">
+            Showing page {page} of {totalPages}
+            {appointments.length > 0 ? ` (${appointments.length} items)` : ""}
+          </p>
+        </div>
+        <div className="pagination">
+          {Array.from({ length: totalPages }, (_, index) => (
+            <button
+              key={index}
+              className={`page-item ${index + 1 === page ? "active" : ""}`}
+              onClick={() => setPage(index + 1)}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
