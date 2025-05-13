@@ -3,7 +3,7 @@ import Navbar from "../../components/navbar/navbar.jsx";
 import { Link, useNavigate } from "react-router-dom";
 import Appointment from "../../components/appointment/appointment.jsx";
 import { useEffect, useState } from "react";
-import api from "../../services/api";
+import api, { setupAuthToken } from "../../services/api";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css"; // Import css
 
@@ -17,6 +17,49 @@ function Appointments() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [serverStatus, setServerStatus] = useState("loading"); // "loading", "online", "offline"
+
+  // Verificar autenticação e status do servidor no carregamento
+  useEffect(() => {
+    const hasToken = setupAuthToken();
+    setIsAuthenticated(hasToken);
+
+    if (!hasToken) {
+      navigate("/");
+      return;
+    }
+
+    // Verificar status do servidor
+    checkServerStatus();
+
+    // Continua com o carregamento normal se estiver autenticado
+    LoadMechanics();
+    LoadAppointments();
+  }, [navigate]);
+
+  async function checkServerStatus() {
+    try {
+      setServerStatus("loading");
+      // Solicitação simples para verificar se o servidor está online
+      const response = await api.get("/ping", { timeout: 5000 });
+      if (response.status === 200) {
+        setServerStatus("online");
+        setError("");
+      } else {
+        setServerStatus("offline");
+        setError("Servidor respondeu, mas parece estar com problemas.");
+      }
+    } catch (error) {
+      console.error("Erro ao verificar status do servidor:", error);
+      setServerStatus("offline");
+      setError(
+        "Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde."
+      );
+    }
+  }
 
   function ClickEdit(id_appointment) {
     navigate("/appointments/edit/" + id_appointment);
@@ -86,16 +129,18 @@ function Appointments() {
   }
 
   async function LoadAppointments() {
+    setLoading(true);
+    setError("");
     try {
       const token = localStorage.getItem("token");
-      console.log("Token for LoadAppointments:", token); // Log do token
+      console.log("Token for LoadAppointments:", token);
       console.log("Loading Appointments with Params:", {
         id_mechanic: idMechanic,
         dt_start: dtStart,
         dt_end: dtEnd,
         page,
         limit: itemsPerPage,
-      }); // Log dos parâmetros enviados
+      });
 
       const response = await api.get("/admin/appointments", {
         params: {
@@ -108,7 +153,7 @@ function Appointments() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Loaded Appointments Response:", response.data); // Log da resposta do backend
+      console.log("Loaded Appointments Response:", response.data);
 
       if (response.data) {
         const appointmentsData = response.data.data || response.data;
@@ -121,11 +166,16 @@ function Appointments() {
         setTotalPages(1);
       }
     } catch (error) {
-      console.error("Error loading appointments:", error); // Log detalhado do erro
+      console.error("Error loading appointments:", error);
+      setError(
+        "Erro ao carregar agendamentos. Por favor, tente novamente mais tarde."
+      );
       if (error.response?.data.error) {
+        setError(error.response?.data.error);
         if (error.response.status === 401) return navigate("/");
-        alert(error.response?.data.error);
-      } else alert("Error loading appointments. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -147,6 +197,20 @@ function Appointments() {
         setPage={setPage}
         totalPages={totalPages}
       />
+
+      {/* Server status indicator */}
+      {serverStatus === "offline" && (
+        <div className="alert alert-danger" role="alert">
+          <strong>Problema de conexão:</strong> {error}
+          <button
+            className="btn btn-sm btn-danger float-end"
+            onClick={checkServerStatus}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
       <div className="d-flex justify-content-between align-items-center">
         <div>
           <h2 className="d-inline">Schedules</h2>
@@ -197,42 +261,61 @@ function Appointments() {
       </div>
 
       <div>
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Customer</th>
-              <th scope="col">Mechanic</th>
-              <th scope="col">Service</th>
-              <th scope="col">Date/Hour</th>
-              <th scope="col">Progress</th>
-              <th scope="col" className="col-buttons"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {appointments.length > 0 ? (
-              appointments.map((ap) => (
-                <Appointment
-                  key={ap.id_appointment}
-                  id_appointment={ap.id_appointment}
-                  user={ap.user}
-                  mechanic={ap.mechanic}
-                  service={ap.service}
-                  booking_date={ap.booking_date}
-                  booking_hour={ap.booking_hour}
-                  progress={ap.progress}
-                  clickEdit={ClickEdit}
-                  clickDelete={ClickDelete}
-                />
-              ))
-            ) : (
+        {loading ? (
+          <div className="text-center my-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Carregando...</span>
+            </div>
+            <p className="mt-2">Carregando agendamentos...</p>
+          </div>
+        ) : error ? (
+          <div className="alert alert-warning my-3" role="alert">
+            {error}
+            <button
+              className="btn btn-sm btn-warning float-end"
+              onClick={LoadAppointments}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : (
+          <table className="table table-hover">
+            <thead>
               <tr>
-                <td colSpan="6" className="text-center">
-                  No appointments found.
-                </td>
+                <th scope="col">Customer</th>
+                <th scope="col">Mechanic</th>
+                <th scope="col">Service</th>
+                <th scope="col">Date/Hour</th>
+                <th scope="col">Progress</th>
+                <th scope="col" className="col-buttons"></th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {appointments.length > 0 ? (
+                appointments.map((ap) => (
+                  <Appointment
+                    key={ap.id_appointment}
+                    id_appointment={ap.id_appointment}
+                    user={ap.user}
+                    mechanic={ap.mechanic}
+                    service={ap.service}
+                    booking_date={ap.booking_date}
+                    booking_hour={ap.booking_hour}
+                    progress={ap.progress}
+                    clickEdit={ClickEdit}
+                    clickDelete={ClickDelete}
+                  />
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center">
+                    No appointments found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="pagination">

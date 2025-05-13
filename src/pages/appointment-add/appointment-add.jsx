@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/navbar/navbar.jsx";
 import { useEffect, useState } from "react";
-import api from "../../services/api";
+import api, { setupAuthToken } from "../../services/api";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css"; // Estilos para o modal de confirmação
 import "./appointment-add.css"; // Importe o arquivo CSS
@@ -21,6 +21,7 @@ function AppointmentAdd() {
   const [bookingHour, setBookingHour] = useState("");
   const [observations, setObservations] = useState("");
   const [additionalServices, setAdditionalServices] = useState([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   async function LoadUsers() {
     try {
@@ -158,8 +159,12 @@ function AppointmentAdd() {
   async function handleDeleteImage(imageId) {
     try {
       console.log(`Attempting to delete image with ID: ${imageId}`); // Log do ID da imagem
+      const token = localStorage.getItem("token");
       const response = await api.delete(
-        `/appointments/${id_appointment}/images/${imageId}`
+        `/appointments/${id_appointment}/images/${imageId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       console.log("Delete response:", response.data); // Log da resposta do backend
       setImages((prevImages) =>
@@ -227,12 +232,21 @@ function AppointmentAdd() {
   }
 
   useEffect(() => {
+    const hasToken = setupAuthToken();
+    setIsAuthenticated(hasToken);
+
+    if (!hasToken) {
+      navigate("/");
+      return;
+    }
+
+    // Carrega dados somente se autenticado
     LoadUsers();
     LoadMechanics();
     if (id_appointment > 0) {
       LoadImages();
     }
-  }, [id_appointment]);
+  }, [id_appointment, navigate]);
 
   useEffect(() => {
     LoadServices(idMechanic);

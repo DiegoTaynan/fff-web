@@ -12,9 +12,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/appointments": {
-        target: "http://localhost:3001",
+      "/api": {
+        target: "https://familyfriendsadmin.com",
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },
