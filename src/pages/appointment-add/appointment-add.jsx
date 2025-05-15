@@ -97,7 +97,7 @@ function AppointmentAdd() {
         setImages(
           response.data.map((img) => ({
             id_image: img.id_image,
-            image_url: img.image_url,
+            image_url: `/proxy-image?url=${encodeURIComponent(img.image_url)}`, // Usar proxy para imagens
             isUploading: false, // Certifica-se de que as imagens carregadas não estão em estado de upload
           }))
         );
@@ -116,43 +116,23 @@ function AppointmentAdd() {
     const formData = new FormData();
     formData.append("image", file);
 
-    const tempImageId = `temp-${Date.now()}`;
-    const newImage = {
-      id_image: tempImageId,
-      image_url: URL.createObjectURL(file), // Exibe a pré-visualização local enquanto o upload está em andamento
-      isUploading: true,
-    };
-    setImages([...images, newImage]);
-
     try {
       const response = await api.post(
         `/appointments/${id_appointment}/images`,
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
 
-      if (response.data.imageUrl && response.data.id_image) {
-        setImages((prevImages) =>
-          prevImages.map((img) =>
-            img.id_image === tempImageId
-              ? {
-                  id_image: response.data.id_image,
-                  image_url: response.data.imageUrl,
-                  isUploading: false,
-                }
-              : img
-          )
-        );
+      if (response.data.imageUrl) {
+        setImages((prevImages) => [
+          ...prevImages,
+          { image_url: response.data.imageUrl },
+        ]);
       }
     } catch (error) {
       alert("Error uploading image.");
-      setImages((prevImages) =>
-        prevImages.filter((img) => img.id_image !== tempImageId)
-      );
     }
   }
 

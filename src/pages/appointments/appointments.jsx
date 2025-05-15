@@ -1,8 +1,8 @@
+import React, { useEffect, useState, useCallback } from "react";
 import "./appointments.css";
 import Navbar from "../../components/navbar/navbar.jsx";
 import { Link, useNavigate } from "react-router-dom";
 import Appointment from "../../components/appointment/appointment.jsx";
-import { useEffect, useState } from "react";
 import api, { setupAuthToken } from "../../services/api";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css"; // Import css
@@ -128,7 +128,8 @@ function Appointments() {
     }
   }
 
-  async function LoadAppointments() {
+  const LoadAppointments = useCallback(async () => {
+    console.log("LoadAppointments called"); // Log para verificar se a função é chamada
     setLoading(true);
     setError("");
     try {
@@ -175,18 +176,19 @@ function Appointments() {
         if (error.response.status === 401) return navigate("/");
       }
     } finally {
+      console.log("LoadAppointments finished"); // Log para verificar se a função terminou
       setLoading(false);
     }
-  }
+  }, [idMechanic, dtStart, dtEnd, page, itemsPerPage, navigate]);
+
+  useEffect(() => {
+    console.log("useEffect triggered for LoadAppointments"); // Log para verificar o disparo do useEffect
+    LoadAppointments();
+  }, [LoadAppointments]);
 
   function ChangeMechanic(e) {
     setIdMechanic(e.target.value);
   }
-
-  useEffect(() => {
-    LoadMechanics();
-    LoadAppointments();
-  }, [page, itemsPerPage]);
 
   return (
     <div className="container-fluid mt-page">
@@ -333,4 +335,4 @@ function Appointments() {
   );
 }
 
-export default Appointments;
+export default React.memo(Appointments);

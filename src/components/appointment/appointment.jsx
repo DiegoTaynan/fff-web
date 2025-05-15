@@ -1,7 +1,13 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { confirmAlert } from "react-confirm-alert";
 import "react-confirm-alert/src/react-confirm-alert.css";
 import api from "../../services/api"; // Certifique-se de que o caminho está correto
+import {
+  FaEdit,
+  FaTrash,
+  FaCheckSquare,
+  FaHourglassHalf,
+} from "react-icons/fa"; // Importa ícones necessários
 
 function Appointment(props) {
   console.log("Appointment Props:", props); // Log para verificar os dados recebidos pelo componente
@@ -75,8 +81,8 @@ function Appointment(props) {
             progress === "C" ? "btn-success" : "btn-secondary"
           }`}
         >
-          <i className="bi bi-check2-square"></i>
-          {/* Confirm */}
+          {progress === "C" ? <FaCheckSquare /> : <FaHourglassHalf />}{" "}
+          {/* Ícone dinâmico */}
         </button>
       </td>
       <td className="text-end">
@@ -85,18 +91,19 @@ function Appointment(props) {
             onClick={() => props.clickEdit(props.id_appointment)}
             className="btn btn-sm btn-react-blue"
           >
-            <i className="bi bi-pencil-square"></i>
+            <FaEdit /> {/* Ícone de edição */}
           </button>
         </div>
         <button
           onClick={() => props.clickDelete(props.id_appointment)}
           className="btn btn-sm btn-primary"
         >
-          <i className="bi bi-trash"></i>
+          <FaTrash /> {/* Ícone de exclusão */}
         </button>
       </td>
     </tr>
   );
 }
 
-export default Appointment;
+// Adicione React.memo no export
+export default React.memo(Appointment);
