@@ -26,7 +26,6 @@ function Register() {
         password,
       });
 
-      console.log("Register response:", response.data); // Log para verificar o valor retornado
       if (response.data) {
         localStorage.setItem("sessionToken", response.data.token);
         localStorage.setItem("sessionId", response.data.id_admin);
@@ -38,7 +37,6 @@ function Register() {
         navigate("/appointments");
       } else setMsg("Error creating account. Please try again later.");
     } catch (error) {
-      console.error("Register error:", error); // Log detalhado do erro
       if (error.response?.data.error) setMsg(error.response?.data.error);
       else setMsg("Error creating account. Please try again later.");
     }

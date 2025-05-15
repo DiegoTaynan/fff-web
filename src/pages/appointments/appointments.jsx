@@ -53,7 +53,6 @@ function Appointments() {
         setError("Servidor respondeu, mas parece estar com problemas.");
       }
     } catch (error) {
-      console.error("Erro ao verificar status do servidor:", error);
       setServerStatus("offline");
       setError(
         "Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde."
@@ -85,19 +84,15 @@ function Appointments() {
   async function DeleteAppointments(id) {
     try {
       const token = localStorage.getItem("token");
-      console.log("Token for DeleteAppointments:", token); // Log do token
-      console.log("Deleting appointment with ID:", id); // Log do ID
 
       const response = await api.delete("/appointments/" + id, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Delete response:", response); // Log da resposta
       if (response.data) {
         await LoadAppointments();
       }
     } catch (error) {
-      console.error("Error deleting appointment:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -108,19 +103,15 @@ function Appointments() {
   async function LoadMechanics() {
     try {
       const token = localStorage.getItem("token");
-      console.log("Token for LoadMechanics:", token); // Log do token
-      console.log("Loading mechanics..."); // Log inicial
 
       const response = await api.get("/mechanic", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Mechanics response:", response); // Log da resposta
       if (response.data) {
         setMechanic(response.data || []);
       }
     } catch (error) {
-      console.error("Error loading mechanics:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -129,19 +120,10 @@ function Appointments() {
   }
 
   const LoadAppointments = useCallback(async () => {
-    console.log("LoadAppointments called"); // Log para verificar se a função é chamada
     setLoading(true);
     setError("");
     try {
       const token = localStorage.getItem("token");
-      console.log("Token for LoadAppointments:", token);
-      console.log("Loading Appointments with Params:", {
-        id_mechanic: idMechanic,
-        dt_start: dtStart,
-        dt_end: dtEnd,
-        page,
-        limit: itemsPerPage,
-      });
 
       const response = await api.get("/admin/appointments", {
         params: {
@@ -154,8 +136,6 @@ function Appointments() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Loaded Appointments Response:", response.data);
-
       if (response.data) {
         const appointmentsData = response.data.data || response.data;
         const totalItems = response.data.totalItems || appointmentsData.length;
@@ -167,7 +147,6 @@ function Appointments() {
         setTotalPages(1);
       }
     } catch (error) {
-      console.error("Error loading appointments:", error);
       setError(
         "Erro ao carregar agendamentos. Por favor, tente novamente mais tarde."
       );
@@ -176,13 +155,11 @@ function Appointments() {
         if (error.response.status === 401) return navigate("/");
       }
     } finally {
-      console.log("LoadAppointments finished"); // Log para verificar se a função terminou
       setLoading(false);
     }
   }, [idMechanic, dtStart, dtEnd, page, itemsPerPage, navigate]);
 
   useEffect(() => {
-    console.log("useEffect triggered for LoadAppointments"); // Log para verificar o disparo do useEffect
     LoadAppointments();
   }, [LoadAppointments]);
 

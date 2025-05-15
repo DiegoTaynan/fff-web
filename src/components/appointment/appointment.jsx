@@ -10,8 +10,6 @@ import {
 } from "react-icons/fa"; // Importa ícones necessários
 
 function Appointment(props) {
-  console.log("Appointment Props:", props); // Log para verificar os dados recebidos pelo componente
-
   const dt = new Date(props.booking_date + "T" + props.booking_hour);
 
   // Formatação manual da data
@@ -50,7 +48,6 @@ function Appointment(props) {
                 alert("Error updating status");
               }
             } catch (error) {
-              console.error("Error updating status:", error); // Log para depuração
               alert("Error updating status. Please try again later.");
             }
           },

@@ -56,7 +56,6 @@ function AppointmentAdd() {
     try {
       const response = await api.get("/admin/appointments/" + id);
       if (response.data) {
-        console.log("Loaded Appointment Data:", response.data); // Log completo dos dados carregados
         setIdUser(response.data.id_user);
         setIdMechanic(response.data.id_mechanic);
         setidService(response.data.id_service);
@@ -66,7 +65,6 @@ function AppointmentAdd() {
         setAdditionalServices(response.data.additional_services || []);
       }
     } catch (error) {
-      console.error("Error loading appointment:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -78,7 +76,6 @@ function AppointmentAdd() {
     try {
       const response = await api.get("/services");
       if (response.data) {
-        console.log("Services Data:", response.data);
         setServices(response.data);
       }
     } catch (error) {
@@ -138,7 +135,6 @@ function AppointmentAdd() {
 
   async function handleDeleteImage(imageId) {
     try {
-      console.log(`Attempting to delete image with ID: ${imageId}`); // Log do ID da imagem
       const token = localStorage.getItem("token");
       const response = await api.delete(
         `/appointments/${id_appointment}/images/${imageId}`,
@@ -146,15 +142,10 @@ function AppointmentAdd() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      console.log("Delete response:", response.data); // Log da resposta do backend
       setImages((prevImages) =>
         prevImages.filter((img) => img.id_image !== imageId)
       ); // Atualiza o estado removendo a imagem
     } catch (error) {
-      console.error(
-        "Error deleting image:",
-        error.response?.data || error.message
-      ); // Log detalhado do erro
       alert(
         `Error deleting image: ${error.response?.data?.error || error.message}`
       );
@@ -189,21 +180,16 @@ function AppointmentAdd() {
       additional_services: additionalServices,
     };
 
-    console.log("Saving Appointment Data:", json); // Log dos dados enviados para salvar
-
     try {
       const response =
         id_appointment > 0
           ? await api.put(`/admin/appointments/${id_appointment}`, json)
           : await api.post("/admin/appointments", json);
 
-      console.log("Save Response:", response.data); // Log da resposta do backend
-
       if (response.data) {
         navigate("/appointments");
       }
     } catch (error) {
-      console.error("Error saving appointment:", error); // Log detalhado do erro
       if (error.response?.data.error) {
         if (error.response.status === 401) return navigate("/");
         alert(error.response?.data.error);
@@ -233,7 +219,7 @@ function AppointmentAdd() {
   }, [idMechanic]);
 
   useEffect(() => {
-    console.log("Additional Services State:", additionalServices);
+    // Effect para adicional services
   }, [additionalServices]);
 
   function generateTimeSlots(day) {
@@ -257,7 +243,6 @@ function AppointmentAdd() {
         timeSlots.push(time);
       }
     }
-    console.log("Generated Time Slots:", timeSlots);
     return timeSlots;
   }
 
