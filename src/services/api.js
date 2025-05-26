@@ -76,8 +76,4 @@ api.interceptors.response.use(
   }
 );
 
-const bucketName = "<your-bucket-name>";
-const fileName = "<your-file-name>";
-const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-
 export default api;
